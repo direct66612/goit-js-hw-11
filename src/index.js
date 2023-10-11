@@ -6,4 +6,4 @@
 //   console.log('!!!');
 //   alert('!!!!');
 // }
-console.log('!!!!');
+import axios from './axios';
