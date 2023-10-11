@@ -6,6 +6,4 @@
 //   console.log('!!!');
 //   alert('!!!!');
 // }
-import axios from 'axios';
-const result = 'asfasfa';
-console.log(result);
+console.log('!!!!');
