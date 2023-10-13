@@ -2,6 +2,8 @@ import axios from 'axios';
 import Notiflix from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 axios.defaults.baseURL = 'https://pixabay.com/api/';
 const key = '39884866-d70e4d00a2666ee51db4ac166';
 let page = 1;
@@ -31,6 +33,15 @@ async function handleSubmit(event) {
       captionDelay: 250,
     });
     instance.on('show.simpleLightbox');
+    const { height: cardHeight } = document
+      .querySelector('.gallery')
+      .firstElementChild.getBoundingClientRect();
+
+    window.scrollBy({
+      top: cardHeight * 2,
+      behavior: 'smooth',
+    });
+    Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`);
   } catch (error) {
     console.log(error);
     refs.btn.classList.replace('load-more', 'hidden');
@@ -39,6 +50,7 @@ async function handleSubmit(event) {
     );
   } finally {
     refs.form.reset();
+    AOS.init();
   }
 }
 async function handleClick() {
@@ -60,6 +72,15 @@ async function handleClick() {
       captionDelay: 250,
     });
     instance.on('show.simpleLightbox');
+    const { height: cardHeight } = document
+      .querySelector('.gallery')
+      .firstElementChild.getBoundingClientRect();
+
+    window.scrollBy({
+      top: cardHeight * 2,
+      behavior: 'smooth',
+    });
+    Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`);
   } catch (error) {
     console.log(error);
     Notiflix.Notify.failure(
@@ -67,6 +88,7 @@ async function handleClick() {
     );
   } finally {
     refs.disabled = false;
+    AOS.init();
   }
 }
 async function takeData(input) {
@@ -92,7 +114,9 @@ async function createMarkup(data) {
         views,
         comments,
         downloads,
-      }) => `<div class="photo-card">
+      }) => `<div class="photo-card" data-aos="flip-left"
+     data-aos-easing="ease-out-cubic"
+     data-aos-duration="2000">
     <a class="photo-card-link" href="${largeImageURL}"><img class="photo-card-img" src="${webformatURL}" alt="${tags}" loading="lazy" /></a>
   <div class="info">
     <p class="info-item">
