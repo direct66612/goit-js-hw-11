@@ -15,7 +15,14 @@ const refs = {
 };
 let inputValue;
 let totalHits;
-refs.btn.classList.replace('load-more', 'hidden');
+let total;
+let sum = 0;
+refs.btn.style.display = 'none';
+const instance = new SimpleLightbox('.photo-card-link', {
+  captionsData: 'alt',
+  captionDelay: 250,
+});
+instance.on('show.simpleLightbox');
 refs.form.addEventListener('submit', handleSubmit);
 
 refs.btn.addEventListener('click', handleClick);
@@ -23,16 +30,14 @@ async function handleSubmit(event) {
   event.preventDefault();
   inputValue = refs.form.elements[0].value;
   page = 1;
+  sum = 0;
+  total = 0;
   refs.gallery.innerHTML = '';
   try {
     const elementsForMarkup = await takeData(inputValue);
     const markup = await createMarkup(elementsForMarkup);
     refs.gallery.innerHTML = markup;
-    const instance = new SimpleLightbox('.photo-card-link', {
-      captionsData: 'alt',
-      captionDelay: 250,
-    });
-    instance.on('show.simpleLightbox');
+    instance.refresh();
     const { height: cardHeight } = document
       .querySelector('.gallery')
       .firstElementChild.getBoundingClientRect();
@@ -44,34 +49,31 @@ async function handleSubmit(event) {
     Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`);
   } catch (error) {
     console.log(error);
-    refs.btn.classList.replace('load-more', 'hidden');
+    refs.btn.style.display = 'none';
     Notiflix.Notify.failure(
       'Sorry, there are no images matching your search query. Please try again.'
     );
   } finally {
     refs.form.reset();
     AOS.init();
+    sum += totalHits;
   }
 }
 async function handleClick() {
   page += 1;
   refs.disabled = true;
-  refs.gallery.innerHTML = '';
+  sum += totalHits;
   try {
-    if (totalHits < PER_PAGE) {
-      refs.btn.classList.replace('load-more', 'hidden');
+    const elementsForMarkup = await takeData(inputValue);
+    const markup = await createMarkup(elementsForMarkup);
+    if (sum >= total) {
+      refs.btn.style.display = 'none';
       Notiflix.Notify.info(
         "We're sorry, but you've reached the end of search results."
       );
     }
-    const elementsForMarkup = await takeData(inputValue);
-    const markup = await createMarkup(elementsForMarkup);
-    refs.gallery.innerHTML = markup;
-    const instance = new SimpleLightbox('.photo-card-link', {
-      captionsData: 'alt',
-      captionDelay: 250,
-    });
-    instance.on('show.simpleLightbox');
+    refs.gallery.insertAdjacentHTML('beforeend', markup);
+    instance.refresh();
     const { height: cardHeight } = document
       .querySelector('.gallery')
       .firstElementChild.getBoundingClientRect();
@@ -96,8 +98,9 @@ async function takeData(input) {
     `?key=${key}&q=${input}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=${PER_PAGE}`
   );
   totalHits = resp.data.totalHits;
+  total = resp.data.total;
   if (totalHits > PER_PAGE) {
-    refs.btn.classList.replace('hidden', 'load-more');
+    refs.btn.style.display = 'block';
   }
   if (resp.data.hits.length !== 0) {
     return resp.data.hits;
