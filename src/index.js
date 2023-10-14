@@ -15,7 +15,6 @@ const refs = {
 };
 let inputValue;
 let totalHits;
-let total;
 let sum = 0;
 refs.btn.style.display = 'none';
 const instance = new SimpleLightbox('.photo-card-link', {
@@ -30,11 +29,14 @@ async function handleSubmit(event) {
   event.preventDefault();
   inputValue = refs.form.elements[0].value;
   page = 1;
+  totalHits = 0;
   sum = 0;
-  total = 0;
   refs.gallery.innerHTML = '';
   try {
     const elementsForMarkup = await takeData(inputValue);
+    if (totalHits > PER_PAGE) {
+      refs.btn.style.display = 'block';
+    }
     const markup = await createMarkup(elementsForMarkup);
     refs.gallery.innerHTML = markup;
     instance.refresh();
@@ -47,6 +49,8 @@ async function handleSubmit(event) {
       behavior: 'smooth',
     });
     Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`);
+    sum += totalHits;
+    sum -= PER_PAGE;
   } catch (error) {
     console.log(error);
     refs.btn.style.display = 'none';
@@ -56,22 +60,21 @@ async function handleSubmit(event) {
   } finally {
     refs.form.reset();
     AOS.init();
-    sum += totalHits;
   }
 }
 async function handleClick() {
   page += 1;
   refs.disabled = true;
-  sum += totalHits;
   try {
-    const elementsForMarkup = await takeData(inputValue);
-    const markup = await createMarkup(elementsForMarkup);
-    if (sum >= total) {
+    if (sum <= PER_PAGE) {
       refs.btn.style.display = 'none';
       Notiflix.Notify.info(
         "We're sorry, but you've reached the end of search results."
       );
     }
+    const elementsForMarkup = await takeData(inputValue);
+    const markup = await createMarkup(elementsForMarkup);
+
     refs.gallery.insertAdjacentHTML('beforeend', markup);
     instance.refresh();
     const { height: cardHeight } = document
@@ -82,12 +85,13 @@ async function handleClick() {
       top: cardHeight * 2,
       behavior: 'smooth',
     });
-    Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`);
+    sum -= PER_PAGE;
   } catch (error) {
     console.log(error);
     Notiflix.Notify.failure(
       'Sorry, there are no images matching your search query. Please try again.'
     );
+    refs.btn.style.display = 'none';
   } finally {
     refs.disabled = false;
     AOS.init();
@@ -98,10 +102,6 @@ async function takeData(input) {
     `?key=${key}&q=${input}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=${PER_PAGE}`
   );
   totalHits = resp.data.totalHits;
-  total = resp.data.total;
-  if (totalHits > PER_PAGE) {
-    refs.btn.style.display = 'block';
-  }
   if (resp.data.hits.length !== 0) {
     return resp.data.hits;
   }
